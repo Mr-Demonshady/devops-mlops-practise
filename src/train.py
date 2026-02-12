@@ -1,3 +1,4 @@
+import os
 import traceback
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -31,6 +32,7 @@ def main():
     mse = mean_squared_error(y_test, preds)
 
     mlflow.set_experiment("devops-mlops-lab")
+
     with mlflow.start_run():
         mlflow.log_metric("mse", mse)
 
@@ -40,19 +42,23 @@ def main():
 if __name__ == "__main__":
     try:
         main()
+
     except Exception:
         err = traceback.format_exc()
-        print("❌ Training failed. Sending email alert...")
+        print("❌ Training failed.")
         print(err)
 
-        # Email only on failure
-        try:
-            send_failure_email(
-                subject="DevOps-MLOps Lab: Training Failed",
-                body=f"Training pipeline failed.\n\nError:\n{err}",
-            )
-            print("✅ Failure email sent.")
-        except Exception as mail_err:
-            print("⚠️ Email sending failed:", mail_err)
+        # Send email only if EMAIL_USER exists (local environment)
+        if os.getenv("EMAIL_USER"):
+            try:
+                send_failure_email(
+                    subject="DevOps-MLOps Lab: Training Failed",
+                    body=f"Training pipeline failed.\n\nError:\n{err}",
+                )
+                print("✅ Failure email sent.")
+            except Exception as mail_err:
+                print("⚠️ Email sending failed:", mail_err)
+        else:
+            print("⚠️ Email not configured (CI environment). Skipping email.")
 
         raise
